@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(where:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(powershell:*)",
+      "Bash(cmd.exe /c \"dir /s /b C:\\\\php.exe 2>nul\")",
+      "Bash(cmd.exe /c \"dir /s /b C:\\\\xampp 2>nul\")",
+      "Bash(cmd.exe /c \"dir /s /b C:\\\\laragon 2>nul\")",
+      "Bash(cmd.exe /c \"dir /s /b C:\\\\wamp* 2>nul\")",
+      "Bash(winget:*)",
+      "Bash(export PATH=\"/c/laragon/bin/php/php-8.3.30-Win32-vs16-x64:/c/laragon/bin/composer:$PATH\")",
+      "Bash(composer install:*)",
+      "Bash(php:*)",
+      "Bash(dir:*)",
+      "Bash(curl:*)",
+      "Bash(where.exe php)"
+    ]
+  }
+}

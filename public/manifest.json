@@ -1,0 +1,36 @@
+{
+  "name": "IIMS Payroll & HR",
+  "short_name": "IIMS HR",
+  "description": "Employee Payroll & HR Management System",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0f1923",
+  "theme_color": "#00e5ff",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "My Payslips",
+      "url": "/my-payslips",
+      "description": "View your payslips"
+    },
+    {
+      "name": "Request Leave",
+      "url": "/leaves/create",
+      "description": "Submit a leave request"
+    }
+  ]
+}
