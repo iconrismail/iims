@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('leave:carry-forward')->yearlyOn(1, 1, '00:05');
     })
     ->withMiddleware(function (Middleware $middleware) {
+        // Trust Railway's reverse proxy so HTTPS scheme is detected correctly
+        $middleware->trustProxies(at: '*');
+
         // Redirect authenticated users away from guest-only routes (login)
         $middleware->redirectUsersTo('/dashboard');
 
