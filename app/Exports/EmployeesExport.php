@@ -22,12 +22,12 @@ class EmployeesExport implements FromCollection, WithHeadings, WithMapping
     {
         return [
             $e->employee_id,
-            $e->user->name,
-            $e->user->email,
-            $e->department->name,
+            $e->user?->name ?? '—',
+            $e->user?->email ?? '—',
+            $e->department?->name ?? '—',
             $e->position,
             $e->phone,
-            $e->hire_date->format('Y-m-d'),
+            $e->hire_date?->format('Y-m-d') ?? '—',
             $e->basic_salary,
             $e->status,
         ];

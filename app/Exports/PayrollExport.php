@@ -23,10 +23,10 @@ class PayrollExport implements FromCollection, WithHeadings, WithMapping
     public function map($payslip): array
     {
         return [
-            $payslip->employee->employee_id,
-            $payslip->employee->user->name,
-            $payslip->employee->department->name,
-            $payslip->employee->position,
+            $payslip->employee->employee_id ?? '—',
+            $payslip->employee?->user?->name ?? '—',
+            $payslip->employee?->department?->name ?? '—',
+            $payslip->employee->position ?? '—',
             $payslip->basic_salary,
             $payslip->allowances,
             $payslip->deductions,

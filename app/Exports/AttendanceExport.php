@@ -23,8 +23,8 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping
     public function map($a): array
     {
         return [
-            $a->employee->employee_id,
-            $a->employee->user->name,
+            $a->employee->employee_id ?? '—',
+            $a->employee?->user?->name ?? '—',
             $a->date->format('Y-m-d'),
             ucfirst($a->status),
             $a->remarks ?? '',

@@ -45,7 +45,7 @@ class BonusController extends Controller
             'employee_id' => 'required|exists:employees,id',
             'month' => 'required|integer|min:1|max:12',
             'year' => 'required|integer|min:2000|max:2100',
-            'amount' => 'required|numeric|min:0.01',
+            'amount' => 'required|numeric|min:0.01|max:999999.99',
             'type' => 'required|in:performance,annual,festival,other',
             'reason' => 'nullable|string|max:1000',
         ]);

@@ -24,13 +24,13 @@ class LeaveController extends Controller
         } elseif ($user->isManager()) {
             $deptId = $user->employee?->department_id;
             if (!$deptId) {
-                return view('leaves.index', ['leaves' => collect(), 'leaveTypes' => collect(), 'employees' => collect(), 'statusFilter' => null]);
+                return view('leaves.index', ['leaves' => collect(), 'leaveTypes' => collect(), 'employees' => collect()]);
             }
             $query->whereHas('employee', fn($q) => $q->where('department_id', $deptId));
         } else {
             $employee = $user->employee;
             if (!$employee) {
-                return view('leaves.index', ['leaves' => collect(), 'leaveTypes' => collect(), 'employees' => collect(), 'statusFilter' => null]);
+                return view('leaves.index', ['leaves' => collect(), 'leaveTypes' => collect(), 'employees' => collect()]);
             }
             $query->where('employee_id', $employee->id);
         }
