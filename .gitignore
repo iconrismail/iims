@@ -3,9 +3,9 @@
 /public/hot
 /public/storage
 /storage/*.key
-/storage/framework/sessions
-/storage/framework/cache/data
-/storage/framework/views
+/storage/framework/sessions/*
+/storage/framework/cache/data/*
+/storage/framework/views/*
 /vendor
 .env
 .env.backup
