@@ -572,7 +572,7 @@
                         <tr>
                             <td class="text-accent">{{ $emp->employee_id }}</td>
                             <td>{{ $emp->user->name }}</td>
-                            <td>{{ $emp->department->name }}</td>
+                            <td>{{ $emp->department?->name ?? '—' }}</td>
                             <td>{{ $emp->position }}</td>
                             <td>
                                 <span class="badge {{ $emp->status === 'active' ? 'badge-success' : 'badge-danger' }}">
