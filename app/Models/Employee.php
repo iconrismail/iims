@@ -34,6 +34,7 @@ class Employee extends Model
         'bank_name',
         'bank_account',
         'date_of_birth',
+        'gender',
         'hire_date',
         'basic_salary',
         'allowances',

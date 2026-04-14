@@ -308,5 +308,308 @@
             @endif
         </div>
 
+        {{-- ADD-ON 1: Attendance Rate Trend --}}
+        <div class="card" style="grid-column: span 2;">
+            <div class="card-header">
+                <h3 class="card-title">Attendance Rate Trend</h3>
+                <span style="font-size:.8rem;color:var(--text-secondary);">Last 6 months (present / recorded)</span>
+            </div>
+            <canvas id="attendanceRateChart" height="80"></canvas>
+        </div>
+
+        {{-- ADD-ON 2: Gender & Contract Type Breakdown --}}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Gender Breakdown</h3>
+                <span style="font-size:.8rem;color:var(--text-secondary);">Active employees</span>
+            </div>
+            <div style="max-width:260px;margin:0 auto;">
+                <canvas id="genderChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Contract Type Breakdown</h3>
+                <span style="font-size:.8rem;color:var(--text-secondary);">Active employees</span>
+            </div>
+            <div style="max-width:260px;margin:0 auto;">
+                <canvas id="contractTypeChart"></canvas>
+            </div>
+        </div>
+
+        {{-- ADD-ON 3: Org-wide Attendance Snapshot Today --}}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Attendance Snapshot</h3>
+                <span style="font-size:.8rem;color:var(--text-secondary);">Today · {{ $now->format('d M Y') }}</span>
+            </div>
+            @php
+                $snapTotal = $todayPresent + $todayAbsent + $onLeaveToday + $notRecordedToday;
+                $snapTotal = $snapTotal ?: 1;
+                $pctPresent  = round(($todayPresent  / $snapTotal) * 100);
+                $pctAbsent   = round(($todayAbsent   / $snapTotal) * 100);
+                $pctLeave    = round(($onLeaveToday  / $snapTotal) * 100);
+                $pctNone     = max(0, 100 - $pctPresent - $pctAbsent - $pctLeave);
+            @endphp
+            <div style="margin-top:1rem;">
+                {{-- Stacked bar --}}
+                <div style="display:flex;height:20px;border-radius:10px;overflow:hidden;margin-bottom:1rem;">
+                    @if($pctPresent > 0)
+                        <div style="width:{{ $pctPresent }}%;background:#00e676;" title="Present: {{ $todayPresent }}"></div>
+                    @endif
+                    @if($pctAbsent > 0)
+                        <div style="width:{{ $pctAbsent }}%;background:#ff5252;" title="Absent: {{ $todayAbsent }}"></div>
+                    @endif
+                    @if($pctLeave > 0)
+                        <div style="width:{{ $pctLeave }}%;background:#ffab00;" title="On Leave: {{ $onLeaveToday }}"></div>
+                    @endif
+                    @if($pctNone > 0)
+                        <div style="width:{{ $pctNone }}%;background:var(--bg-tertiary);" title="Not Recorded: {{ $notRecordedToday }}"></div>
+                    @endif
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">
+                    <div style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;">
+                        <span style="width:10px;height:10px;background:#00e676;border-radius:50%;flex-shrink:0;"></span>
+                        Present <strong style="margin-left:auto;">{{ $todayPresent }}</strong>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;">
+                        <span style="width:10px;height:10px;background:#ff5252;border-radius:50%;flex-shrink:0;"></span>
+                        Absent <strong style="margin-left:auto;">{{ $todayAbsent }}</strong>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;">
+                        <span style="width:10px;height:10px;background:#ffab00;border-radius:50%;flex-shrink:0;"></span>
+                        On Leave <strong style="margin-left:auto;">{{ $onLeaveToday }}</strong>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;">
+                        <span style="width:10px;height:10px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:50%;flex-shrink:0;"></span>
+                        Not Recorded <strong style="margin-left:auto;">{{ $notRecordedToday }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ADD-ON 6: Headcount Growth Trend --}}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Headcount Growth</h3>
+                <span style="font-size:.8rem;color:var(--text-secondary);">Last 6 months</span>
+            </div>
+            <canvas id="headcountChart" height="120"></canvas>
+        </div>
+
+        {{-- ADD-ON 4: Leave Balance Warnings --}}
+        <div class="card" style="grid-column: span 2;">
+            <div class="card-header">
+                <h3 class="card-title">Leave Balance Warnings</h3>
+                <span style="font-size:.8rem;color:#ef4444;">Employees at ≥80% leave usage ({{ $now->year }})</span>
+            </div>
+            @if($leaveWarnings->isEmpty())
+                <div class="empty-state" style="padding:1.5rem 0;">
+                    <p style="color:var(--text-secondary);">No employees near their leave limit.</p>
+                </div>
+            @else
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Leave Type</th>
+                                <th>Entitled</th>
+                                <th>Used</th>
+                                <th>Remaining</th>
+                                <th>Usage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($leaveWarnings as $bal)
+                                @php
+                                    $total   = $bal->entitled_days + $bal->carried_forward;
+                                    $pct     = $total > 0 ? round(($bal->used_days / $total) * 100) : 0;
+                                    $barColor = $pct >= 100 ? '#ef4444' : ($pct >= 90 ? '#f97316' : '#f59e0b');
+                                @endphp
+                                <tr>
+                                    <td class="font-bold">{{ $bal->employee?->user?->name ?? '—' }}</td>
+                                    <td>{{ $bal->leaveType?->name ?? '—' }}</td>
+                                    <td>{{ $total }}d</td>
+                                    <td>{{ $bal->used_days }}d</td>
+                                    <td>{{ $bal->remaining() }}d</td>
+                                    <td style="min-width:120px;">
+                                        <div style="display:flex;align-items:center;gap:.5rem;">
+                                            <div style="flex:1;background:var(--bg-tertiary);border-radius:99px;height:6px;">
+                                                <div style="background:{{ $barColor }};border-radius:99px;height:6px;width:{{ min($pct,100) }}%;"></div>
+                                            </div>
+                                            <span style="font-size:.75rem;font-weight:600;color:{{ $barColor }};width:36px;text-align:right;">{{ $pct }}%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </div>
+
+        {{-- ADD-ON 5: Pending Overtime Requests --}}
+        <div class="card" style="grid-column: span 2;">
+            <div class="card-header">
+                <h3 class="card-title">Pending Overtime Requests</h3>
+                <a href="{{ route('overtime.index') }}" class="btn btn-secondary btn-sm">View All</a>
+            </div>
+            @if($pendingOvertimeRequests->isEmpty())
+                <div class="empty-state" style="padding:1.5rem 0;">
+                    <p style="color:var(--text-secondary);">No pending overtime requests.</p>
+                </div>
+            @else
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Date</th>
+                                <th>Hours</th>
+                                <th>Reason</th>
+                                <th>Submitted</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($pendingOvertimeRequests as $ot)
+                                <tr>
+                                    <td class="font-bold">{{ $ot->employee?->user?->name ?? '—' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($ot->date)->format('d M Y') }}</td>
+                                    <td>{{ $ot->hours }}h</td>
+                                    <td style="max-width:200px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">{{ $ot->reason ?? '—' }}</td>
+                                    <td class="text-secondary">{{ $ot->created_at->format('d M Y') }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <form action="{{ route('overtime.approve', $ot) }}" method="POST" style="display:inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                            </form>
+                                            <form action="{{ route('overtime.reject', $ot) }}" method="POST" style="display:inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-secondary">Reject</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </div>
+
     </div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    function animateCounter(el) {
+        const raw = el.textContent.replace(/,/g, '');
+        const target = parseInt(raw, 10);
+        if (isNaN(target) || target === 0) return;
+        el.textContent = '0';
+        const duration = 900;
+        const startTime = performance.now();
+        function step(now) {
+            const progress = Math.min((now - startTime) / duration, 1);
+            const ease = 1 - Math.pow(1 - progress, 3);
+            el.textContent = Math.round(ease * target).toLocaleString();
+            if (progress < 1) requestAnimationFrame(step);
+            else el.textContent = target.toLocaleString();
+        }
+        requestAnimationFrame(step);
+    }
+    document.querySelectorAll('.stat-info h3').forEach(animateCounter);
+})();
+
+const chartScales = {
+    x: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+    y: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+};
+
+// ADD-ON 1: Attendance Rate Trend
+const attendanceRateData = @json($attendanceRateTrend);
+new Chart(document.getElementById('attendanceRateChart'), {
+    type: 'line',
+    data: {
+        labels: attendanceRateData.map(d => d.label),
+        datasets: [{
+            label: 'Attendance Rate (%)',
+            data: attendanceRateData.map(d => d.rate),
+            borderColor: '#6c63ff',
+            backgroundColor: 'rgba(108,99,255,0.12)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+            pointBackgroundColor: '#6c63ff',
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: '#aaa' } } },
+        scales: {
+            x: chartScales.x,
+            y: { ...chartScales.y, min: 0, max: 100, ticks: { color: '#aaa', callback: v => v + '%' } }
+        }
+    }
+});
+
+// ADD-ON 2a: Gender Donut
+const genderRaw = @json($genderData);
+new Chart(document.getElementById('genderChart'), {
+    type: 'doughnut',
+    data: {
+        labels: Object.keys(genderRaw),
+        datasets: [{
+            data: Object.values(genderRaw),
+            backgroundColor: ['#6c63ff', '#ff6b6b', '#00e676', '#ffab00'],
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: '#aaa', font: { size: 11 } } } }
+    }
+});
+
+// ADD-ON 2b: Contract Type Donut
+const contractRaw = @json($contractTypeData);
+new Chart(document.getElementById('contractTypeChart'), {
+    type: 'doughnut',
+    data: {
+        labels: Object.keys(contractRaw),
+        datasets: [{
+            data: Object.values(contractRaw),
+            backgroundColor: ['#29b6f6', '#ffab00', '#ef5350', '#00e676', '#ab47bc'],
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: '#aaa', font: { size: 11 } } } }
+    }
+});
+
+// ADD-ON 6: Headcount Growth Bar
+const headcountData = @json($headcountTrend);
+new Chart(document.getElementById('headcountChart'), {
+    type: 'bar',
+    data: {
+        labels: headcountData.map(d => d.label),
+        datasets: [{
+            label: 'Total Headcount',
+            data: headcountData.map(d => d.count),
+            backgroundColor: 'rgba(108,99,255,0.7)',
+            borderRadius: 4,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: '#aaa' } } },
+        scales: { ...chartScales, y: { ...chartScales.y, beginAtZero: true } }
+    }
+});
+</script>
+@endpush

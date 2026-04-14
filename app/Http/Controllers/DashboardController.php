@@ -12,6 +12,7 @@ use App\Models\OvertimeRecord;
 use App\Models\EmployeeDocument;
 use App\Models\Bonus;
 use App\Models\PerformanceReview;
+use App\Models\EmployeeLeaveBalance;
 use App\Services\AttendanceInsightService;
 use App\Services\PayrollForecastService;
 use App\Services\LeaveBalanceService;
@@ -287,13 +288,67 @@ class DashboardController extends Controller
             ->map(fn($g) => $g->count())
             ->sortDesc();
 
+        // ── ADD-ON 1: Attendance Rate Trend (6 months) ────────
+        $attendanceRateTrend = collect();
+        for ($i = 5; $i >= 0; $i--) {
+            $date    = $now->copy()->subMonths($i);
+            $present = Attendance::whereMonth('date', $date->month)->whereYear('date', $date->year)->where('status', 'present')->count();
+            $absent  = Attendance::whereMonth('date', $date->month)->whereYear('date', $date->year)->where('status', 'absent')->count();
+            $total   = $present + $absent;
+            $attendanceRateTrend->push([
+                'label' => $date->format('M Y'),
+                'rate'  => $total > 0 ? round(($present / $total) * 100, 1) : 0,
+            ]);
+        }
+
+        // ── ADD-ON 2: Gender & Contract Type Breakdown ────────
+        $genderData = Employee::where('status', 'active')
+            ->get()
+            ->groupBy(fn($e) => $e->gender ?? 'Not Set')
+            ->map(fn($g) => $g->count());
+
+        $contractTypeData = Employee::where('status', 'active')
+            ->get()
+            ->groupBy(fn($e) => $e->contract_type ?? 'Not Set')
+            ->map(fn($g) => $g->count());
+
+        // ── ADD-ON 3: Org-wide Attendance Snapshot (today) ────
+        $notRecordedToday = max(0, $totalEmployees - $todayPresent - $todayAbsent - $onLeaveToday);
+
+        // ── ADD-ON 4: Leave Balance Warnings (≥80% used) ─────
+        $leaveWarnings = EmployeeLeaveBalance::with(['employee.user', 'leaveType'])
+            ->where('year', $now->year)
+            ->whereRaw('entitled_days + carried_forward > 0')
+            ->whereRaw('used_days >= (entitled_days + carried_forward) * 0.8')
+            ->orderByRaw('used_days / (entitled_days + carried_forward) DESC')
+            ->take(10)
+            ->get();
+
+        // ── ADD-ON 5: Pending Overtime Requests ───────────────
+        $pendingOvertimeRequests = OvertimeRecord::with('employee.user')
+            ->where('status', 'pending')
+            ->latest()
+            ->take(8)
+            ->get();
+
+        // ── ADD-ON 6: Headcount Growth Trend (6 months) ───────
+        $headcountTrend = collect();
+        for ($i = 5; $i >= 0; $i--) {
+            $date = $now->copy()->subMonths($i)->endOfMonth();
+            $count = Employee::whereDate('hire_date', '<=', $date->toDateString())->count();
+            $headcountTrend->push(['label' => $date->format('M Y'), 'count' => $count]);
+        }
+
         return view('dashboard.hr', compact(
             'totalEmployees', 'newHiresMonth', 'inactiveCount',
             'todayPresent', 'todayAbsent', 'onLeaveToday',
             'pendingLeaves', 'pendingProfileUpdates',
             'pendingLeaveRequests', 'deptData',
             'expiringContracts', 'recentHires',
-            'upcomingEvents', 'monthLeaveByType', 'now'
+            'upcomingEvents', 'monthLeaveByType', 'now',
+            'attendanceRateTrend', 'genderData', 'contractTypeData',
+            'notRecordedToday', 'leaveWarnings',
+            'pendingOvertimeRequests', 'headcountTrend'
         ));
     }
 
