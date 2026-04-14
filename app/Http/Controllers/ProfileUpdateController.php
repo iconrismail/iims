@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Employee;
 use App\Models\ProfileUpdateRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -79,10 +78,10 @@ class ProfileUpdateController extends Controller
         return view('profile-updates.index', compact('requests', 'status', 'pendingCount'));
     }
 
-    /** Admin: approve and apply the requested changes */
+    /** Admin / HR: approve and apply the requested changes */
     public function approve(Request $request, ProfileUpdateRequest $profileRequest): RedirectResponse
     {
-        abort_if(!$request->user()->isAdmin(), 403);
+        abort_if(!$request->user()->isAdminOrHR(), 403);
         abort_if(!$profileRequest->isPending(), 422, 'This request is not pending.');
 
         $employee = $profileRequest->employee;
@@ -108,14 +107,14 @@ class ProfileUpdateController extends Controller
     /** Admin: reject the request */
     public function reject(Request $request, ProfileUpdateRequest $profileRequest): RedirectResponse
     {
-        abort_if(!$request->user()->isAdmin(), 403);
+        abort_if(!$request->user()->isAdminOrHR(), 403);
         abort_if(!$profileRequest->isPending(), 422, 'This request is not pending.');
 
         $request->validate(['admin_note' => 'nullable|string|max:500']);
 
         $profileRequest->update([
             'status'      => 'rejected',
-            'admin_note'  => $request->admin_note,
+            'admin_note'  => $request->input('admin_note'),
             'reviewed_by' => $request->user()->id,
             'reviewed_at' => now(),
         ]);

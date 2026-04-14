@@ -22,6 +22,7 @@ use App\Http\Controllers\PerformanceReviewController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\PublicHolidayController;
 use App\Http\Controllers\ProfileUpdateController;
+use App\Http\Controllers\AccountController;
 use Illuminate\Support\Facades\Route;
 
 // ─── Public Routes (no auth required) ────────────────────
@@ -182,4 +183,9 @@ Route::middleware('auth')->group(function () {
 
     // HR Chatbot (all authenticated users)
     Route::post('/chatbot', [ChatbotController::class, 'chat'])->name('chatbot.chat');
+
+    // Account settings (all authenticated users)
+    Route::get('/account', [AccountController::class, 'show'])->name('account.show');
+    Route::patch('/account', [AccountController::class, 'update'])->name('account.update');
+    Route::patch('/account/password', [AccountController::class, 'updatePassword'])->name('account.password');
 });
