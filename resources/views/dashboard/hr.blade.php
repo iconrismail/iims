@@ -625,9 +625,6 @@
                         <tbody>
                             @foreach($noAttendanceThisMonth as $emp)
                                 @php
-                                    $hiredThisMonth = $emp->hire_date
-                                        && $emp->hire_date->month == $now->month
-                                        && $emp->hire_date->year  == $now->year;
                                     $hiredAfterMonthStart = $emp->hire_date
                                         && $emp->hire_date->gt($now->copy()->startOfMonth());
                                 @endphp

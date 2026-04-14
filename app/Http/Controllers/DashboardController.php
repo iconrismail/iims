@@ -353,7 +353,7 @@ class DashboardController extends Controller
             ->groupBy('department_id');
 
         $reviewedEmpStatus = PerformanceReview::where('period_year', $now->year)
-            ->select('employee_id', 'status')
+            ->select('id', 'employee_id', 'status')
             ->get()
             ->groupBy('employee_id')
             ->map(fn($r) => $r->sortByDesc('id')->first()->status);
