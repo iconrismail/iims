@@ -87,8 +87,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/bonuses/{bonus}/approve', [BonusController::class, 'approve'])->name('bonuses.approve');
         Route::delete('/bonuses/{bonus}', [BonusController::class, 'destroy'])->name('bonuses.destroy');
 
-        // Audit log
-        Route::get('/audit-log', [AuditController::class, 'index'])->name('audit.index');
+        // (audit log moved to role:admin,hr group below)
 
         // Overtime write operations (admin only)
         Route::get('/overtime/create', [OvertimeController::class, 'create'])->name('overtime.create');
@@ -123,6 +122,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/holidays', [PublicHolidayController::class, 'index'])->name('holidays.index');
         Route::post('/holidays', [PublicHolidayController::class, 'store'])->name('holidays.store');
         Route::delete('/holidays/{holiday}', [PublicHolidayController::class, 'destroy'])->name('holidays.destroy');
+
+        // Audit log (read-only for HR)
+        Route::get('/audit-log', [AuditController::class, 'index'])->name('audit.index');
 
         // Profile update requests
         Route::get('/profile-updates', [ProfileUpdateController::class, 'index'])->name('profile-updates.index');

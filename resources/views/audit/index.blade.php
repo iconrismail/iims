@@ -4,6 +4,56 @@
 @section('page-title', 'Audit Log')
 
 @section('content')
+
+    {{-- Stats Row --}}
+    <div class="stats-grid" style="margin-bottom:1.5rem;">
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div class="stat-info">
+                <h3>{{ number_format($totalLogs) }}</h3>
+                <div class="stat-label">Total Log Entries</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="stat-info">
+                <h3>{{ $todayLogs }}</h3>
+                <div class="stat-label">Events Today</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon orange">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </div>
+            <div class="stat-info">
+                <h3>{{ $eventCounts->get('created', 0) }}</h3>
+                <div class="stat-label">Records Created</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon amber">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </div>
+            <div class="stat-info">
+                <h3>{{ $eventCounts->get('updated', 0) }}</h3>
+                <div class="stat-label">Records Updated</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon red">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+            </div>
+            <div class="stat-info">
+                <h3>{{ $eventCounts->get('deleted', 0) }}</h3>
+                <div class="stat-label">Records Deleted</div>
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Audit Log</h3>

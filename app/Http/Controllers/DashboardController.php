@@ -331,6 +331,15 @@ class DashboardController extends Controller
             ->take(8)
             ->get();
 
+        // ── ADD-ON 9: Activity Feed (Spatie audit log, last 8) ──
+        $activityFeed = \Spatie\Activitylog\Models\Activity::with('causer')
+            ->latest()->take(8)->get();
+
+        // ── ADD-ON 10: Role Distribution ──────────────────────
+        $roleDistribution = \App\Models\User::selectRaw('role, COUNT(*) as count')
+            ->groupBy('role')
+            ->pluck('count', 'role');
+
         // ── ADD-ON 6: Headcount Growth Trend (6 months) ───────
         $headcountTrend = collect();
         for ($i = 5; $i >= 0; $i--) {
@@ -402,7 +411,8 @@ class DashboardController extends Controller
             'notRecordedToday', 'leaveWarnings',
             'pendingOvertimeRequests', 'headcountTrend',
             'reviewStatusCounts', 'deptReviewSummary',
-            'noAttendanceThisMonth'
+            'noAttendanceThisMonth',
+            'activityFeed', 'roleDistribution'
         ));
     }
 

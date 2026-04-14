@@ -694,7 +694,14 @@ textarea.form-control {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    position: relative;
+    overflow: hidden;
 }
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+.spin-icon { animation: spin .7s linear infinite; will-change: transform; }
 
 .alert-success {
     background: rgba(0, 230, 118, 0.1);

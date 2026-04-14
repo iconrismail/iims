@@ -139,6 +139,10 @@
                             <span class="nav-badge nav-badge-orange">{{ $sidebarProfileUpdates > 99 ? '99+' : $sidebarProfileUpdates }}</span>
                         @endif
                     </a>
+                    <a href="{{ route('audit.index') }}" data-label="Audit Log" class="nav-link {{ request()->routeIs('audit.*') ? 'active' : '' }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <span>Audit Log</span>
+                    </a>
                 @endif
 
                 @if($isManager)
@@ -313,33 +317,50 @@
                 </div>
             </header>
 
+            {{-- Offline Banner --}}
+            <div id="offline-banner" style="display:none;position:sticky;top:0;z-index:200;background:#78350f;border-bottom:1px solid #f59e0b;padding:.6rem 1.25rem;align-items:center;gap:.75rem;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                <span style="font-size:.85rem;font-weight:600;color:#fcd34d;flex:1;">No internet connection — you are viewing cached data. Changes will sync when reconnected.</span>
+                <span id="offline-sync-msg" style="font-size:.75rem;color:#f59e0b;display:none;">Reconnected — syncing…</span>
+            </div>
+
             {{-- Page Body --}}
             <main class="page-content">
                 {{-- Flash Messages --}}
                 @if(session('success'))
-                    <div class="alert alert-success">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                        {{ session('success') }}
+                    <div class="alert alert-success flash-dismissible" role="alert">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        <span style="flex:1">{{ session('success') }}</span>
+                        <button onclick="dismissFlash(this.closest('.flash-dismissible'))" style="background:none;border:none;cursor:pointer;opacity:.6;padding:0;line-height:1;color:inherit;" title="Dismiss">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                        <div class="flash-progress-bar" style="position:absolute;bottom:0;left:0;height:3px;background:rgba(0,230,118,.5);border-radius:0 0 var(--radius) var(--radius);width:100%;transition:width linear;"></div>
                     </div>
                 @endif
 
                 @if(session('error'))
-                    <div class="alert alert-error">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                        {{ session('error') }}
+                    <div class="alert alert-error flash-dismissible" role="alert">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                        <span style="flex:1">{{ session('error') }}</span>
+                        <button onclick="dismissFlash(this.closest('.flash-dismissible'))" style="background:none;border:none;cursor:pointer;opacity:.6;padding:0;line-height:1;color:inherit;" title="Dismiss">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                        <div class="flash-progress-bar" style="position:absolute;bottom:0;left:0;height:3px;background:rgba(255,82,82,.5);border-radius:0 0 var(--radius) var(--radius);width:100%;transition:width linear;"></div>
                     </div>
                 @endif
 
                 @if($errors->any())
-                    <div class="alert alert-error">
-                        <div>
+                    <div class="alert alert-error flash-dismissible" role="alert">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                        <div style="flex:1">
                             <strong>Please fix the following errors:</strong>
-                            <ul style="margin: 0.5rem 0 0 1rem; font-size: 0.82rem">
-                                @foreach($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
+                            <ul style="margin:.4rem 0 0 1rem;font-size:.82rem">
+                                @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
                             </ul>
                         </div>
+                        <button onclick="dismissFlash(this.closest('.flash-dismissible'))" style="background:none;border:none;cursor:pointer;opacity:.6;padding:0;line-height:1;color:inherit;align-self:flex-start;" title="Dismiss">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
                     </div>
                 @endif
 
@@ -607,6 +628,76 @@
         }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <script>
+    // ── Flash auto-dismiss (5 s) ─────────────────────────────
+    window.dismissFlash = function(el) {
+        if (!el) return;
+        el.style.transition = 'opacity .3s, transform .3s';
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(-6px)';
+        setTimeout(() => el.remove(), 320);
+    };
+    (function () {
+        const DURATION = 5000;
+        document.querySelectorAll('.flash-dismissible').forEach(function (el) {
+            const bar = el.querySelector('.flash-progress-bar');
+            const start = performance.now();
+            function tick(now) {
+                const pct = Math.max(0, 1 - (now - start) / DURATION);
+                if (bar) bar.style.width = (pct * 100) + '%';
+                if (pct > 0) requestAnimationFrame(tick);
+                else dismissFlash(el);
+            }
+            requestAnimationFrame(tick);
+        });
+    })();
+
+    // ── Offline / online detection ───────────────────────────
+    (function () {
+        const banner = document.getElementById('offline-banner');
+        const syncMsg = document.getElementById('offline-sync-msg');
+        if (!banner) return;
+        function update() {
+            if (!navigator.onLine) {
+                banner.style.display = 'flex';
+                if (syncMsg) syncMsg.style.display = 'none';
+            } else {
+                if (banner.style.display === 'flex') {
+                    // Was offline, just came back
+                    if (syncMsg) syncMsg.style.display = 'inline';
+                    setTimeout(function () { banner.style.display = 'none'; }, 2500);
+                } else {
+                    banner.style.display = 'none';
+                }
+            }
+        }
+        window.addEventListener('online',  update);
+        window.addEventListener('offline', update);
+        update();
+    })();
+
+    // ── Form submit loading state ────────────────────────────
+    (function () {
+        document.addEventListener('submit', function (e) {
+            const form = e.target;
+            const btn  = form.querySelector('button[type="submit"]:not([data-no-load])');
+            if (!btn || btn.disabled) return;
+            btn.disabled = true;
+            const orig = btn.innerHTML;
+            btn.innerHTML =
+                '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+                'style="animation:spin .7s linear infinite;margin-right:.4rem" class="spin-icon">' +
+                '<path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Saving…';
+            // Safety fallback — re-enable after 15 s in case of redirect failure
+            setTimeout(function () {
+                btn.disabled = false;
+                btn.innerHTML = orig;
+            }, 15000);
+        });
+    })();
+    </script>
+
     @stack('scripts')
 
     {{-- Confirmation Modal (Feature 14) --}}

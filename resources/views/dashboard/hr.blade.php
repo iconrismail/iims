@@ -501,6 +501,93 @@
             @endif
         </div>
 
+        {{-- ADD-ON 9: Activity Feed --}}
+        <div class="card" style="grid-column: span 2;">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:.4rem;vertical-align:-2px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Activity Feed
+                    <span style="font-size:.72rem;font-weight:400;color:var(--text-secondary);margin-left:.5rem;">Real-time audit trail</span>
+                </h3>
+                <a href="{{ route('audit.index') }}" class="btn btn-secondary btn-sm">View Full Log</a>
+            </div>
+            @if($activityFeed->isEmpty())
+                <div class="empty-state" style="padding:1.5rem 0;">
+                    <p style="color:var(--text-secondary);">No activity recorded yet.</p>
+                </div>
+            @else
+                <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.25rem;">
+                    @foreach($activityFeed as $activity)
+                        @php
+                            $eventColor = match($activity->event) {
+                                'created' => '#00e676',
+                                'updated' => '#29b6f6',
+                                'deleted' => '#ef4444',
+                                default   => '#aaa',
+                            };
+                            $eventLabel = match($activity->event) {
+                                'created' => 'Created',
+                                'updated' => 'Updated',
+                                'deleted' => 'Deleted',
+                                default   => ucfirst($activity->event ?? 'Log'),
+                            };
+                            $subject = class_basename($activity->subject_type ?? 'Record');
+                            $desc    = $activity->description ?: "{$eventLabel} {$subject}";
+                        @endphp
+                        <div style="display:flex;align-items:flex-start;gap:.75rem;padding:.6rem .75rem;background:var(--bg-tertiary);border-radius:8px;">
+                            <span style="width:8px;height:8px;border-radius:50%;background:{{ $eventColor }};flex-shrink:0;margin-top:.35rem;"></span>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:.84rem;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">{{ $desc }}</div>
+                                <div style="font-size:.75rem;color:var(--text-secondary);margin-top:.1rem;">
+                                    <span style="color:{{ $eventColor }};font-weight:600;font-size:.72rem;">{{ $eventLabel }}</span>
+                                    &nbsp;·&nbsp; {{ $activity->causer?->name ?? 'System' }}
+                                    @if($activity->subject_type)
+                                        &nbsp;·&nbsp; {{ $subject }}
+                                        @if($activity->subject_id) #{{ $activity->subject_id }} @endif
+                                    @endif
+                                </div>
+                            </div>
+                            <div style="font-size:.72rem;color:var(--text-secondary);flex-shrink:0;white-space:nowrap;">{{ $activity->created_at->diffForHumans() }}</div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
+        {{-- ADD-ON 10: Role Distribution --}}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Role Distribution</h3>
+                <span style="font-size:.8rem;color:var(--text-secondary);">{{ $roleDistribution->sum() }} total users</span>
+            </div>
+            @php
+                $roleConfig = [
+                    'admin'    => ['label' => 'Admin',    'color' => '#6c63ff'],
+                    'hr'       => ['label' => 'HR',       'color' => '#29b6f6'],
+                    'manager'  => ['label' => 'Manager',  'color' => '#f59e0b'],
+                    'employee' => ['label' => 'Employee', 'color' => '#00e676'],
+                ];
+                $totalUsers = $roleDistribution->sum() ?: 1;
+            @endphp
+            <div style="display:flex;flex-direction:column;gap:.75rem;margin-top:.5rem;">
+                @foreach($roleConfig as $roleKey => $cfg)
+                    @php $count = $roleDistribution->get($roleKey, 0); @endphp
+                    <div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem;">
+                            <div style="display:flex;align-items:center;gap:.5rem;">
+                                <span style="width:10px;height:10px;border-radius:50%;background:{{ $cfg['color'] }};flex-shrink:0;"></span>
+                                <span style="font-size:.85rem;font-weight:600;">{{ $cfg['label'] }}</span>
+                            </div>
+                            <span style="font-size:.82rem;color:var(--text-secondary);">{{ $count }} user{{ $count != 1 ? 's' : '' }}</span>
+                        </div>
+                        <div style="background:var(--bg-tertiary);border-radius:99px;height:6px;">
+                            <div style="background:{{ $cfg['color'] }};border-radius:99px;height:6px;width:{{ ($count / $totalUsers) * 100 }}%;transition:width .3s;"></div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
         {{-- ADD-ON 7: Performance Review Status Summary --}}
         <div class="card" style="grid-column: span 2;">
             <div class="card-header">
