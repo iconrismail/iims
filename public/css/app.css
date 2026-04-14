@@ -459,6 +459,16 @@ img { max-width: 100%; }
     color: var(--danger);
 }
 
+.stat-icon.amber {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.stat-icon.grey {
+    background: rgba(150, 150, 160, 0.1);
+    color: #9ca3af;
+}
+
 .stat-info h3 {
     font-size: 1.5rem;
     font-weight: 700;
@@ -578,6 +588,12 @@ textarea.form-control {
 .form-error {
     color: var(--danger);
     font-size: 0.78rem;
+    margin-top: 0.3rem;
+}
+
+.form-hint {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
     margin-top: 0.3rem;
 }
 
