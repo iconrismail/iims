@@ -477,9 +477,9 @@
                             @foreach($pendingOvertimeRequests as $ot)
                                 <tr>
                                     <td class="font-bold">{{ $ot->employee?->user?->name ?? '—' }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($ot->date)->format('d M Y') }}</td>
+                                    <td>{{ $ot->date->format('d M Y') }}</td>
                                     <td>{{ $ot->hours }}h</td>
-                                    <td style="max-width:200px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">{{ $ot->reason ?? '—' }}</td>
+                                    <td style="max-width:200px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">{{ $ot->notes ?? '—' }}</td>
                                     <td class="text-secondary">{{ $ot->created_at->format('d M Y') }}</td>
                                     <td>
                                         <div class="btn-group">
