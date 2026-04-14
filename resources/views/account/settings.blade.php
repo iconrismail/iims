@@ -25,19 +25,19 @@
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
                 <div class="form-group">
                     <label class="form-label" for="name">Display Name <span style="color:#ef4444">*</span></label>
-                    <input type="text" id="name" name="name" class="form-control @error('name') is-invalid @enderror"
+                    <input type="text" id="name" name="name" class="form-control"
                            value="{{ old('name', $user->name) }}" required maxlength="100" autocomplete="name">
                     @error('name')
-                        <div class="invalid-feedback" style="color:#ef4444;font-size:.8rem;margin-top:.25rem">{{ $message }}</div>
+                        <div class="form-error" style="color:#ef4444;font-size:.8rem;margin-top:.25rem">{{ $message }}</div>
                     @enderror
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="email">Email Address <span style="color:#ef4444">*</span></label>
-                    <input type="email" id="email" name="email" class="form-control @error('email') is-invalid @enderror"
+                    <input type="email" id="email" name="email" class="form-control"
                            value="{{ old('email', $user->email) }}" required maxlength="150" autocomplete="email">
                     @error('email')
-                        <div class="invalid-feedback" style="color:#ef4444;font-size:.8rem;margin-top:.25rem">{{ $message }}</div>
+                        <div class="form-error" style="color:#ef4444;font-size:.8rem;margin-top:.25rem">{{ $message }}</div>
                     @enderror
                 </div>
             </div>
@@ -68,21 +68,21 @@
                 <div class="form-group">
                     <label class="form-label" for="current_password">Current Password <span style="color:#ef4444">*</span></label>
                     <input type="password" id="current_password" name="current_password"
-                           class="form-control @error('current_password') is-invalid @enderror"
+                           class="form-control"
                            required autocomplete="current-password">
                     @error('current_password')
-                        <div class="invalid-feedback" style="color:#ef4444;font-size:.8rem;margin-top:.25rem">{{ $message }}</div>
+                        <div class="form-error" style="color:#ef4444;font-size:.8rem;margin-top:.25rem">{{ $message }}</div>
                     @enderror
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="password">New Password <span style="color:#ef4444">*</span></label>
                     <input type="password" id="password" name="password"
-                           class="form-control @error('password') is-invalid @enderror"
+                           class="form-control"
                            required autocomplete="new-password">
                     <div class="form-hint">Minimum 8 characters, must include letters and numbers.</div>
                     @error('password')
-                        <div class="invalid-feedback" style="color:#ef4444;font-size:.8rem;margin-top:.25rem">{{ $message }}</div>
+                        <div class="form-error" style="color:#ef4444;font-size:.8rem;margin-top:.25rem">{{ $message }}</div>
                     @enderror
                 </div>
 
