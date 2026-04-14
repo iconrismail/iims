@@ -41,6 +41,10 @@ class DashboardController extends Controller
             return $this->managerDashboard($user, $now);
         }
 
+        if ($user->isHR()) {
+            return $this->hrDashboard($now);
+        }
+
         return $this->employeeDashboard($user, $now);
     }
 
@@ -209,6 +213,88 @@ class DashboardController extends Controller
             ->merge($expiringDocs)
             ->sortBy('date')
             ->values();
+    }
+
+    private function hrDashboard(Carbon $now): View
+    {
+        // ── Headcount ────────────────────────────────────────
+        $totalEmployees  = Employee::where('status', 'active')->count();
+        $newHiresMonth   = Employee::whereMonth('hire_date', $now->month)
+                                   ->whereYear('hire_date', $now->year)->count();
+        $inactiveCount   = Employee::where('status', 'inactive')->count();
+
+        // ── Attendance today ──────────────────────────────────
+        $todayPresent = Attendance::whereDate('date', $now->toDateString())
+                                  ->where('status', 'present')->count();
+        $todayAbsent  = Attendance::whereDate('date', $now->toDateString())
+                                  ->where('status', 'absent')->count();
+
+        // ── On leave today ────────────────────────────────────
+        $onLeaveToday = LeaveRequest::where('status', 'approved')
+            ->whereDate('start_date', '<=', $now->toDateString())
+            ->whereDate('end_date', '>=', $now->toDateString())
+            ->count();
+
+        // ── Pending approvals ─────────────────────────────────
+        $pendingLeaves         = LeaveRequest::where('status', 'pending')->count();
+        $pendingProfileUpdates = \App\Models\ProfileUpdateRequest::where('status', 'pending')->count();
+
+        // ── Pending leave requests (table) ────────────────────
+        $pendingLeaveRequests = LeaveRequest::with(['employee.user', 'leaveType'])
+            ->where('status', 'pending')
+            ->latest()
+            ->take(8)
+            ->get();
+
+        // ── Department headcount ──────────────────────────────
+        $deptData = Department::withCount(['employees' => fn($q) => $q->where('status', 'active')])->get();
+
+        // ── Contracts / probation expiring within 30 days ─────
+        $expiringContracts = Employee::with('user', 'department')
+            ->where('status', 'active')
+            ->where(function ($q) use ($now) {
+                $in30  = $now->copy()->addDays(30)->toDateString();
+                $today = $now->toDateString();
+                $q->where(function ($q2) use ($today, $in30) {
+                    $q2->whereIn('contract_type', ['fixed-term', 'probation'])
+                       ->whereNotNull('contract_end_date')
+                       ->whereDate('contract_end_date', '>=', $today)
+                       ->whereDate('contract_end_date', '<=', $in30);
+                })->orWhere(function ($q2) use ($today, $in30) {
+                    $q2->whereNotNull('probation_end_date')
+                       ->whereDate('probation_end_date', '>=', $today)
+                       ->whereDate('probation_end_date', '<=', $in30);
+                });
+            })
+            ->get();
+
+        // ── Recent hires ──────────────────────────────────────
+        $recentHires = Employee::with('user', 'department')
+            ->latest('hire_date')
+            ->take(5)
+            ->get();
+
+        // ── Upcoming events (next 7 days) ─────────────────────
+        $upcomingEvents = $this->getUpcomingEvents($now);
+
+        // ── Leave requests this month by type ─────────────────
+        $monthLeaveByType = LeaveRequest::with('leaveType')
+            ->whereMonth('start_date', $now->month)
+            ->whereYear('start_date', $now->year)
+            ->where('status', 'approved')
+            ->get()
+            ->groupBy(fn($l) => $l->leaveType?->name ?? 'Other')
+            ->map(fn($g) => $g->count())
+            ->sortDesc();
+
+        return view('dashboard.hr', compact(
+            'totalEmployees', 'newHiresMonth', 'inactiveCount',
+            'todayPresent', 'todayAbsent', 'onLeaveToday',
+            'pendingLeaves', 'pendingProfileUpdates',
+            'pendingLeaveRequests', 'deptData',
+            'expiringContracts', 'recentHires',
+            'upcomingEvents', 'monthLeaveByType', 'now'
+        ));
     }
 
     public function exportPdf(Request $request): \Illuminate\Http\Response

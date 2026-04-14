@@ -48,40 +48,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/export-pdf', [DashboardController::class, 'exportPdf'])->name('dashboard.exportPdf')->middleware('role:admin');
 
-    // ── Admin Only Routes ────────────────────────────────
+    // ── Admin Only Routes (sensitive: payroll, tax, settings, bonuses) ──
     Route::middleware('role:admin')->group(function () {
-        // Employees CRUD
-        Route::resource('employees', EmployeeController::class);
-
-        // Departments CRUD
-        Route::resource('departments', DepartmentController::class)->except('show');
-
-        // Attendance management
-        Route::post('/attendance/bulk', [AttendanceController::class, 'bulkStore'])->name('attendance.bulk');
-        Route::delete('/attendance/{attendance}', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
-        Route::post('/attendance', [AttendanceController::class, 'store'])->name('attendance.store');
-
         // Payroll management
         Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
         Route::get('/payroll/create', [PayrollController::class, 'create'])->name('payroll.create');
         Route::post('/payroll/process', [PayrollController::class, 'process'])->name('payroll.process');
         Route::get('/payroll/{payroll}', [PayrollController::class, 'show'])->name('payroll.show');
         Route::patch('/payroll/{payroll}/paid', [PayrollController::class, 'markPaid'])->name('payroll.markPaid');
-
-        // Leave approve/reject moved to admin+manager group below
-
-        // Reports
-        Route::prefix('reports')->name('reports.')->group(function () {
-            Route::get('/', [ReportController::class, 'index'])->name('index');
-            Route::get('/payroll', [ReportController::class, 'payrollSummary'])->name('payroll');
-            Route::get('/attendance', [ReportController::class, 'attendanceSummary'])->name('attendance');
-            Route::get('/export/payroll', [ReportController::class, 'exportPayroll'])->name('export.payroll');
-            Route::get('/export/attendance', [ReportController::class, 'exportAttendance'])->name('export.attendance');
-            Route::get('/export/employees', [ReportController::class, 'exportEmployees'])->name('export.employees');
-        });
-
-        // Audit log
-        Route::get('/audit-log', [AuditController::class, 'index'])->name('audit.index');
 
         // Tax & Deduction Rules
         Route::get('/tax', [TaxController::class, 'index'])->name('tax.index');
@@ -91,7 +65,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('/tax/rules/{rule}/toggle', [TaxController::class, 'toggleRule'])->name('tax.rules.toggle');
         Route::delete('/tax/rules/{rule}', [TaxController::class, 'destroyRule'])->name('tax.rules.destroy');
 
-        // 2FA setup (admin only)
+        // 2FA setup
         Route::get('/2fa/setup', [TwoFactorController::class, 'showSetup'])->name('2fa.setup');
         Route::post('/2fa/enable', [TwoFactorController::class, 'enableTwoFactor'])->name('2fa.enable');
         Route::post('/2fa/disable', [TwoFactorController::class, 'disableTwoFactor'])->name('2fa.disable');
@@ -105,11 +79,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
         Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
 
-        // Overtime — admin-only write operations
-        Route::get('/overtime/create', [OvertimeController::class, 'create'])->name('overtime.create');
-        Route::post('/overtime', [OvertimeController::class, 'store'])->name('overtime.store');
-        Route::delete('/overtime/{overtime}', [OvertimeController::class, 'destroy'])->name('overtime.destroy');
-
         // Bonus management
         Route::get('/bonuses', [BonusController::class, 'index'])->name('bonuses.index');
         Route::get('/bonuses/create', [BonusController::class, 'create'])->name('bonuses.create');
@@ -117,13 +86,35 @@ Route::middleware('auth')->group(function () {
         Route::post('/bonuses/{bonus}/approve', [BonusController::class, 'approve'])->name('bonuses.approve');
         Route::delete('/bonuses/{bonus}', [BonusController::class, 'destroy'])->name('bonuses.destroy');
 
+        // Audit log
+        Route::get('/audit-log', [AuditController::class, 'index'])->name('audit.index');
+
+        // Overtime write operations (admin only)
+        Route::get('/overtime/create', [OvertimeController::class, 'create'])->name('overtime.create');
+        Route::post('/overtime', [OvertimeController::class, 'store'])->name('overtime.store');
+        Route::delete('/overtime/{overtime}', [OvertimeController::class, 'destroy'])->name('overtime.destroy');
+    });
+
+    // ── Admin + HR Routes (people operations) ────────────
+    Route::middleware('role:admin,hr')->group(function () {
+        // Employees CRUD
+        Route::resource('employees', EmployeeController::class);
+
+        // Departments CRUD
+        Route::resource('departments', DepartmentController::class)->except('show');
+
+        // Attendance management
+        Route::post('/attendance/bulk', [AttendanceController::class, 'bulkStore'])->name('attendance.bulk');
+        Route::delete('/attendance/{attendance}', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
+        Route::post('/attendance', [AttendanceController::class, 'store'])->name('attendance.store');
+
         // Document management
         Route::get('/employees/{employee}/documents', [DocumentController::class, 'index'])->name('employees.documents');
         Route::post('/employees/{employee}/documents', [DocumentController::class, 'store'])->name('employees.documents.store');
         Route::get('/documents/{document}/download', [DocumentController::class, 'download'])->name('documents.download');
         Route::delete('/documents/{document}', [DocumentController::class, 'destroy'])->name('documents.destroy');
 
-        // Performance reviews (admin-only actions)
+        // Performance reviews (admin/HR actions)
         Route::get('/performance/{review}/ai-summary', [PerformanceReviewController::class, 'aiSummary'])->name('performance.aiSummary');
         Route::get('/performance/kpi', [PerformanceReviewController::class, 'kpiIndex'])->name('performance.kpi');
 
@@ -132,19 +123,25 @@ Route::middleware('auth')->group(function () {
         Route::post('/holidays', [PublicHolidayController::class, 'store'])->name('holidays.store');
         Route::delete('/holidays/{holiday}', [PublicHolidayController::class, 'destroy'])->name('holidays.destroy');
 
-        // Profile update requests — admin review
+        // Profile update requests
         Route::get('/profile-updates', [ProfileUpdateController::class, 'index'])->name('profile-updates.index');
         Route::post('/profile-updates/{profileRequest}/approve', [ProfileUpdateController::class, 'approve'])->name('profile-updates.approve');
         Route::post('/profile-updates/{profileRequest}/reject', [ProfileUpdateController::class, 'reject'])->name('profile-updates.reject');
 
-        // Analytics reports
+        // Reports
         Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/', [ReportController::class, 'index'])->name('index');
+            Route::get('/payroll', [ReportController::class, 'payrollSummary'])->name('payroll');
+            Route::get('/attendance', [ReportController::class, 'attendanceSummary'])->name('attendance');
             Route::get('/analytics', [ReportController::class, 'analytics'])->name('analytics');
+            Route::get('/export/payroll', [ReportController::class, 'exportPayroll'])->name('export.payroll');
+            Route::get('/export/attendance', [ReportController::class, 'exportAttendance'])->name('export.attendance');
+            Route::get('/export/employees', [ReportController::class, 'exportEmployees'])->name('export.employees');
         });
     });
 
-    // ── Admin + Manager Routes ────────────────────────────
-    Route::middleware('role:admin,manager')->group(function () {
+    // ── Admin + Manager + HR Routes ───────────────────────
+    Route::middleware('role:admin,manager,hr')->group(function () {
         // Leave approval
         Route::post('/leaves/{leave}/approve', [LeaveController::class, 'approve'])->name('leaves.approve');
         Route::post('/leaves/{leave}/reject', [LeaveController::class, 'reject'])->name('leaves.reject');
@@ -154,7 +151,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/overtime/{overtime}/approve', [OvertimeController::class, 'approve'])->name('overtime.approve');
         Route::post('/overtime/{overtime}/reject', [OvertimeController::class, 'reject'])->name('overtime.reject');
 
-        // Performance reviews — create / edit / submit (managers limited to their dept)
+        // Performance reviews — create / submit
         Route::get('/performance/create', [PerformanceReviewController::class, 'create'])->name('performance.create');
         Route::post('/performance', [PerformanceReviewController::class, 'store'])->name('performance.store');
         Route::post('/performance/{review}/submit', [PerformanceReviewController::class, 'submit'])->name('performance.submit');
