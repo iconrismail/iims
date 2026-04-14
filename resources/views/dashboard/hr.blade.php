@@ -501,6 +501,156 @@
             @endif
         </div>
 
+        {{-- ADD-ON 7: Performance Review Status Summary --}}
+        <div class="card" style="grid-column: span 2;">
+            <div class="card-header">
+                <h3 class="card-title">Performance Review Status — {{ $now->year }}</h3>
+                <a href="{{ route('performance.index') }}" class="btn btn-secondary btn-sm">View All</a>
+            </div>
+
+            {{-- Overall counters --}}
+            @php
+                $totalReviews     = $reviewStatusCounts->sum();
+                $cntDraft         = $reviewStatusCounts->get('draft', 0);
+                $cntSubmitted     = $reviewStatusCounts->get('submitted', 0);
+                $cntAcknowledged  = $reviewStatusCounts->get('acknowledged', 0);
+            @endphp
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:.75rem 0 1.25rem;">
+                <div style="text-align:center;padding:.75rem;background:var(--bg-tertiary);border-radius:8px;">
+                    <div style="font-size:1.6rem;font-weight:700;color:#f59e0b;">{{ $cntDraft }}</div>
+                    <div style="font-size:.78rem;color:var(--text-secondary);margin-top:.2rem;">Draft</div>
+                </div>
+                <div style="text-align:center;padding:.75rem;background:var(--bg-tertiary);border-radius:8px;">
+                    <div style="font-size:1.6rem;font-weight:700;color:#29b6f6;">{{ $cntSubmitted }}</div>
+                    <div style="font-size:.78rem;color:var(--text-secondary);margin-top:.2rem;">Submitted</div>
+                </div>
+                <div style="text-align:center;padding:.75rem;background:var(--bg-tertiary);border-radius:8px;">
+                    <div style="font-size:1.6rem;font-weight:700;color:#00e676;">{{ $cntAcknowledged }}</div>
+                    <div style="font-size:.78rem;color:var(--text-secondary);margin-top:.2rem;">Acknowledged</div>
+                </div>
+            </div>
+
+            {{-- Per-department breakdown --}}
+            @if($deptReviewSummary->isEmpty())
+                <div class="empty-state" style="padding:1rem 0;">
+                    <p style="color:var(--text-secondary);">No department data available.</p>
+                </div>
+            @else
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Department</th>
+                                <th>Active</th>
+                                <th style="color:#00e676;">Submitted / Ack.</th>
+                                <th style="color:#f59e0b;">Draft</th>
+                                <th style="color:#ef4444;">No Review</th>
+                                <th>Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($deptReviewSummary as $row)
+                                @php
+                                    $completePct = $row['total'] > 0
+                                        ? round(($row['submitted'] / $row['total']) * 100)
+                                        : 0;
+                                    $barColor = $completePct >= 80 ? '#00e676' : ($completePct >= 40 ? '#f59e0b' : '#ef4444');
+                                @endphp
+                                <tr>
+                                    <td class="font-bold">{{ $row['name'] }}</td>
+                                    <td>{{ $row['total'] }}</td>
+                                    <td>
+                                        @if($row['submitted'] > 0)
+                                            <span style="color:#00e676;font-weight:600;">{{ $row['submitted'] }}</span>
+                                        @else
+                                            <span style="color:var(--text-secondary);">0</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($row['draft'] > 0)
+                                            <span style="color:#f59e0b;font-weight:600;">{{ $row['draft'] }}</span>
+                                        @else
+                                            <span style="color:var(--text-secondary);">0</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($row['no_review'] > 0)
+                                            <span style="color:#ef4444;font-weight:600;">{{ $row['no_review'] }}</span>
+                                        @else
+                                            <span style="color:#00e676;font-weight:600;">0</span>
+                                        @endif
+                                    </td>
+                                    <td style="min-width:120px;">
+                                        <div style="display:flex;align-items:center;gap:.5rem;">
+                                            <div style="flex:1;background:var(--bg-tertiary);border-radius:99px;height:6px;">
+                                                <div style="background:{{ $barColor }};border-radius:99px;height:6px;width:{{ $completePct }}%;transition:width .3s;"></div>
+                                            </div>
+                                            <span style="font-size:.75rem;font-weight:600;color:{{ $barColor }};width:36px;text-align:right;">{{ $completePct }}%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </div>
+
+        {{-- ADD-ON 8: Employees With No Attendance This Month --}}
+        <div class="card" style="grid-column: span 2;">
+            <div class="card-header">
+                <h3 class="card-title">No Attendance Recorded This Month</h3>
+                <span style="font-size:.8rem;color:#f59e0b;display:flex;align-items:center;gap:.3rem;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    {{ $noAttendanceThisMonth->count() }} active employee{{ $noAttendanceThisMonth->count() != 1 ? 's' : '' }} · {{ $now->format('F Y') }}
+                </span>
+            </div>
+            @if($noAttendanceThisMonth->isEmpty())
+                <div class="empty-state" style="padding:1.5rem 0;">
+                    <div style="font-size:2rem;opacity:.3;margin-bottom:.5rem;">✓</div>
+                    <p style="color:var(--text-secondary);">All active employees have at least one attendance record this month.</p>
+                </div>
+            @else
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Department</th>
+                                <th>Position</th>
+                                <th>Hired</th>
+                                <th>Note</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($noAttendanceThisMonth as $emp)
+                                @php
+                                    $hiredThisMonth = $emp->hire_date
+                                        && $emp->hire_date->month == $now->month
+                                        && $emp->hire_date->year  == $now->year;
+                                    $hiredAfterMonthStart = $emp->hire_date
+                                        && $emp->hire_date->gt($now->copy()->startOfMonth());
+                                @endphp
+                                <tr>
+                                    <td class="font-bold">{{ $emp->user?->name ?? '—' }}</td>
+                                    <td>{{ $emp->department?->name ?? '—' }}</td>
+                                    <td style="color:var(--text-secondary);">{{ $emp->position ?? '—' }}</td>
+                                    <td style="color:var(--text-secondary);">{{ $emp->hire_date?->format('d M Y') ?? '—' }}</td>
+                                    <td>
+                                        @if($hiredAfterMonthStart)
+                                            <span class="badge badge-info" style="font-size:.72rem;">New hire</span>
+                                        @else
+                                            <span class="badge badge-warning" style="font-size:.72rem;">Data gap</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </div>
+
     </div>
 @endsection
 

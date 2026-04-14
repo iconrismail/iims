@@ -339,6 +339,58 @@ class DashboardController extends Controller
             $headcountTrend->push(['label' => $date->format('M Y'), 'count' => $count]);
         }
 
+        // ── ADD-ON 7: Performance Review Status Summary ───────
+        // Overall counts by status for current year
+        $reviewStatusCounts = PerformanceReview::where('period_year', $now->year)
+            ->selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status');
+
+        // Per-department breakdown — 3 queries, no N+1
+        $empsByDept = Employee::where('status', 'active')
+            ->select('id', 'department_id')
+            ->get()
+            ->groupBy('department_id');
+
+        $reviewedEmpStatus = PerformanceReview::where('period_year', $now->year)
+            ->select('employee_id', 'status')
+            ->get()
+            ->groupBy('employee_id')
+            ->map(fn($r) => $r->sortByDesc('id')->first()->status);
+
+        $deptReviewSummary = Department::withCount([
+                'employees as active_count' => fn($q) => $q->where('status', 'active'),
+            ])
+            ->get()
+            ->filter(fn($d) => $d->active_count > 0)
+            ->map(function ($dept) use ($empsByDept, $reviewedEmpStatus) {
+                $empIds = $empsByDept->get($dept->id, collect())->pluck('id');
+                $submitted   = $empIds->filter(fn($id) => in_array($reviewedEmpStatus->get($id), ['submitted', 'acknowledged']))->count();
+                $draft       = $empIds->filter(fn($id) => $reviewedEmpStatus->get($id) === 'draft')->count();
+                $noReview    = $empIds->filter(fn($id) => !$reviewedEmpStatus->has($id))->count();
+                return [
+                    'name'      => $dept->name,
+                    'total'     => $empIds->count(),
+                    'submitted' => $submitted,
+                    'draft'     => $draft,
+                    'no_review' => $noReview,
+                ];
+            })
+            ->sortByDesc('no_review')
+            ->values();
+
+        // ── ADD-ON 8: Employees With No Attendance This Month ──
+        $attendedThisMonth = Attendance::whereMonth('date', $now->month)
+            ->whereYear('date', $now->year)
+            ->distinct()
+            ->pluck('employee_id');
+
+        $noAttendanceThisMonth = Employee::with('user', 'department')
+            ->where('status', 'active')
+            ->whereNotIn('id', $attendedThisMonth)
+            ->orderBy('hire_date')
+            ->get();
+
         return view('dashboard.hr', compact(
             'totalEmployees', 'newHiresMonth', 'inactiveCount',
             'todayPresent', 'todayAbsent', 'onLeaveToday',
@@ -348,7 +400,9 @@ class DashboardController extends Controller
             'upcomingEvents', 'monthLeaveByType', 'now',
             'attendanceRateTrend', 'genderData', 'contractTypeData',
             'notRecordedToday', 'leaveWarnings',
-            'pendingOvertimeRequests', 'headcountTrend'
+            'pendingOvertimeRequests', 'headcountTrend',
+            'reviewStatusCounts', 'deptReviewSummary',
+            'noAttendanceThisMonth'
         ));
     }
 
